@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { listFolders, listImagesInFolder } from "../services/cloudinaryService.js";
+import { listFolders, listImagesInFolder, listFoldersWithPreview } from "../services/cloudinaryService.js";
 
 const router = Router();
 
@@ -8,7 +8,7 @@ router.get("/folders", async (req, res) => {
     // optional: support query ?root=PHU
 
     const root = req.query.root || "";
-    console.log("root", root);
+    // console.log("root", root);
     const data = await listFolders(root);
     res.json(data);
   } catch (err) {
@@ -24,6 +24,17 @@ router.get("/images", async (req, res) => {
 
     const data = await listImagesInFolder(folder);
     res.json({ folder, total: data.length, images: data });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get("/folders-with-preview", async (req, res) => {
+  try {
+    const root = req.query.root || "";
+    const data = await listFoldersWithPreview(root);
+    res.json(data);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

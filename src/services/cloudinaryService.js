@@ -16,8 +16,6 @@ cloudinary.config({
  * If root provided (e.g. "PHU") returns sub_folders inside that root.
  */
 export async function listFolders(root = "") {
-  console.log("root listFolders", root);
-  console.log(process.env.CLOUDINARY_CLOUD_NAME);
   
   if (!process.env.CLOUDINARY_CLOUD_NAME) {
     throw new Error("CLOUDINARY config is missing");
@@ -26,9 +24,7 @@ export async function listFolders(root = "") {
   if (!root) {
     // top-level root folders
     try {
-      console.log("cloudinary.api.root_folders");
       const res = await cloudinary.api.root_folders();
-      console.log("res listFolders", res);
       // res.folders => [{ name, path }]
       return res.folders || [];
     } catch (err) {
@@ -38,15 +34,46 @@ export async function listFolders(root = "") {
   } else {
     // subfolders of a given folder
     try {
-      console.log("cloudinary.api.sub_folders", root);
+      // console.log("cloudinary.api.sub_folders", root);
       const res = await cloudinary.api.sub_folders(root);
-      console.log("res listFolders", res);
+      // console.log("res listFolders", res);
       return res.folders || [];
     } catch (err) {
       console.error("error listFolders", err);
       return [];
     }
   }
+}
+export async function listFoldersWithPreview(root = "") {
+  // lấy danh sách folder như cũ
+  const folders = await listFolders(root);
+
+  // lặp qua từng folder và lấy 1 ảnh bất kỳ
+  const result = await Promise.all(
+    folders.map(async (folder) => {
+      const folderPath = root ? `${root}/${folder.name}` : folder.name;
+
+      try {
+        const searchResult = await cloudinary.search
+          .expression(`folder:${folderPath}`)
+          .max_results(1) // lấy 1 ảnh
+          .execute();
+
+        const preview =
+          searchResult.resources?.[0]?.secure_url || null;
+
+        return {
+          ...folder,
+          previewImage: preview,
+        };
+      } catch (err) {
+        console.error("error fetching preview for", folderPath, err);
+        return { ...folder, previewImage: null };
+      }
+    })
+  );
+
+  return result;
 }
 
 /**
