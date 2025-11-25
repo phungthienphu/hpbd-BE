@@ -1,7 +1,7 @@
 import multer from "multer";
 import { Router } from "express";
 import Image from "../models/Image.js";
-import Folder from "../models/folder.js";
+import Folder from "../models/Folder.js";
 import cloudinary from "cloudinary";
 
 const router = Router();
