@@ -6,30 +6,7 @@ import { Router } from "express";
 import cloudinary from "cloudinary";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() }); // nhận buffer
-//http://localhost:8888/folders/add?name=My Birthday&description=sinh nhat anh
-
-// router.post("/add", async (req, res) => {
-//   //@swagger
-//   try {
-//     const { name, description } = req.body;
-//     console.log(name, description);
-//     // Kiểm tra folder trùng
-//     const existing = await Folder.findOne({ name });
-//     if (existing) return res.status(400).json({ message: "Folder đã tồn tại" });
-
-//     const folder = new Folder({
-//       name,
-//       path: name.toLowerCase().replace(/\s+/g, "-"),
-//       description,
-//     });
-
-//     await folder.save();
-//     res.status(201).json(folder);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// });
+const upload = multer({ storage: multer.memoryStorage() }); 
 router.post("/add", upload.single("preview"), async (req, res) => {
   try {
     const { name, description } = req.body;
@@ -69,28 +46,72 @@ router.post("/add", upload.single("preview"), async (req, res) => {
   }
 });
 
-//http://localhost:8888/folders/update/1?name=My Birthday&description=sinh nhat anh
-router.patch("/update/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, description } = req.body;
+router.patch(
+  "/update/:id",
+  upload.single("preview"), // hỗ trợ upload ảnh mới
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description } = req.body;
+      const file = req.file;
 
-    const folder = await Folder.findById(id);
-    if (!folder)
-      return res.status(404).json({ message: "Folder không tồn tại" });
+      const folder = await Folder.findById(id);
+      if (!folder)
+        return res.status(404).json({ message: "Folder không tồn tại" });
 
-    if (name) {
-      folder.name = name;
-      folder.path = name.toLowerCase().replace(/\s+/g, "-");
+      // --- Update name ---
+      if (name) {
+        folder.name = name;
+        folder.path = name.toLowerCase().replace(/\s+/g, "-");
+      }
+
+      // --- Update description ---
+      if (description !== undefined) {
+        folder.description = description;
+      }
+
+      // --- Update preview image nếu có file mới ---
+      if (file) {
+        // 1. Upload ảnh mới lên Cloudinary
+        const uploaded = await new Promise((resolve, reject) => {
+          const stream = cloudinary.v2.uploader.upload_stream(
+            { folder: "folder-previews" },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
+          stream.end(file.buffer);
+        });
+
+        const newPreviewUrl = uploaded.secure_url;
+
+        // 2. (Tùy chọn) Xóa ảnh preview cũ trên Cloudinary nếu có
+        if (folder.previewImage) {
+          try {
+            // Lấy cloudinary public_id từ URL cũ
+            const publicId = folder.previewImage
+              .split("/")
+              .slice(-1)[0]
+              .split(".")[0];
+
+            await cloudinary.v2.uploader.destroy(`folder-previews/${publicId}`);
+          } catch (err) {
+            console.warn("Không thể xóa ảnh cũ:", err.message);
+          }
+        }
+
+        // 3. Lưu preview mới
+        folder.previewImage = newPreviewUrl;
+      }
+
+      await folder.save();
+      res.json(folder);
+    } catch (err) {
+      res.status(500).json({ message: err.message });
     }
-    if (description) folder.description = description;
-
-    await folder.save();
-    res.json(folder);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
-});
+);
 
 //http://localhost:8888/folders/delete/1
 router.delete("/delete/:id", async (req, res) => {
@@ -107,7 +128,6 @@ router.delete("/delete/:id", async (req, res) => {
 });
 
 //http://localhost:8888/folders/preview/1?previewImage=https://example.com/image.jpg
-
 
 router.patch("/preview/:id", upload.single("preview"), async (req, res) => {
   try {
