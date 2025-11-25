@@ -4,11 +4,18 @@ const ImageSchema = new mongoose.Schema(
   {
     cloudinaryId: { type: String, required: true },
     url: { type: String, required: true },
-    folder: { type: String, required: true },
-    description: { type: String, default: "" }, 
-    folderName: { type: String, default: "" },
+    folderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Folder",
+      required: true,
+    },
+    description: { type: String, default: "" },
   },
-  { timestamps: true, collection: "images" }
+  { timestamps: true }
 );
 
-export default mongoose.model("Image", ImageSchema);
+// Tạo model
+const Image = mongoose.model("Image", ImageSchema);
+
+// Export model
+export default Image;
