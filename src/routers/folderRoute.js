@@ -1,7 +1,7 @@
 // POST /folders
 
 import multer from "multer";
-import Folder from "../models/folder.js";
+import Folder from "../models/Folder.js";
 import { Router } from "express";
 import cloudinary from "cloudinary";
 
