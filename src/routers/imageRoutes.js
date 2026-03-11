@@ -79,46 +79,6 @@ router.post("/sync", async (req, res) => {
   }
 });
 
-// router.post("/add", upload.single("file"), async (req, res) => {
-//   try {
-//     const { folderName, description } = req.body;
-//     const file = req.file;
-//     if (!file) return res.status(400).json({ message: "Chưa gửi file" });
-
-//     // Lấy folder, nếu chưa có tạo mới
-//     let folder = await Folder.findOne({ name: folderName });
-//     if (!folder) {
-//       folder = await Folder.create({
-//         name: folderName,
-//         path: folderName.toLowerCase().replace(/\s+/g, "-"),
-//       });
-//     }
-
-//     // Upload lên Cloudinary
-//     const result = await new Promise((resolve, reject) => {
-//       const stream = cloudinary.v2.uploader.upload_stream(
-//         { folder: folder.name },
-//         (error, result) => {
-//           if (error) reject(error);
-//           else resolve(result);
-//         }
-//       );
-//       stream.end(file.buffer);
-//     });
-
-//     // Tạo record ảnh trong DB
-//     const image = await Image.create({
-//       cloudinaryId: result.public_id,
-//       url: result.secure_url,
-//       folderId: folder._id,
-//       description: description || "",
-//     });
-
-//     res.status(201).json(image);
-//   } catch (err) {
-//     res.status(500).json({ message: err.message });
-//   }
-// });
 //add munti
 router.post("/add", upload.array("files", 50), async (req, res) => {
   try {
@@ -203,14 +163,6 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-//di chuyển ảnh
-// {
-//   "imageIds": [
-//     "650f1c4e2a5b3f1a2c3d4e5f",
-//     "650f1c4e2a5b3f1a2c3d4e60"
-//   ],
-//   "idTransfer": "650f1c4e2a5b3f1a2c3d4e99"
-// }
 router.patch("/move", async (req, res) => {
   try {
     const { imageIds, idTransfer } = req.body;
