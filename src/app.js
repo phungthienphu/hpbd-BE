@@ -21,12 +21,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Kiểm tra kết nối DB trước khi xử lý request
-app.use((_req, res, next) => {
+// app.use((_req, res, next) => {
 //   if (mongoose.connection.readyState !== 1) {
-    return res.status(503).json({ message: "Máy chủ chưa sẵn sàng, vui lòng thử lại sau" });
+//     return res.status(503).json({ message: "Máy chủ chưa sẵn sàng, vui lòng thử lại sau" });
 //   }
-  next();
-});
+//   next();
+// });
 
 app.get("/", (req, res) => res.json({ message: "Backend is running" }));
 app.use("/folders", folderRoutes);
