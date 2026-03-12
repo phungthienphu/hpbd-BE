@@ -1,5 +1,6 @@
 import { Router } from "express";
 import Item from "../models/Item.js";
+import User from "../models/User.js";
 import { authenticate, requireAdmin } from "../middlewares/auth.js";
 
 const router = Router();
@@ -31,16 +32,24 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET /items — user + admin đều xem được, hỗ trợ filter
+// GET /items — admin xem tất cả, user chỉ xem của mình + của admin
 // Query params: category, priority, status
 router.get("/", async (req, res) => {
   try {
-    const { category, priority, status } = req.query;
+    const { category, priority, status, createdBy } = req.query;
     const filter = {};
 
     if (category) filter.category = category;
     if (priority) filter.priority = priority;
     if (status) filter.status = status;
+
+    if (req.user.role === 1) {
+      if (createdBy) filter.createdBy = createdBy;
+    } else {
+      const admins = await User.find({ role: 1 }).select("_id");
+      const adminIds = admins.map((a) => a._id);
+      filter.createdBy = { $in: [req.user._id, ...adminIds] };
+    }
 
     const items = await Item.find(filter)
       .populate("createdBy", "username role")
