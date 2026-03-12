@@ -4,6 +4,7 @@ import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/User.js";
 import { authenticate } from "../middlewares/auth.js";
+import { friendlyError } from "../utils/errorHandler.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -27,7 +28,8 @@ router.post("/register", async (req, res) => {
     const user = await User.create({ username, password, role });
     res.status(201).json({ _id: user._id, username: user.username, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
   }
 });
 
@@ -52,7 +54,8 @@ router.post("/login", async (req, res) => {
 
     res.json({ token, user: { _id: user._id, username: user.username, role: user.role } });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
   }
 });
 
@@ -63,7 +66,8 @@ router.get("/me", authenticate, async (req, res) => {
     if (!user) return res.status(404).json({ message: "Không tìm thấy user" });
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
   }
 });
 
@@ -79,7 +83,8 @@ router.patch("/me", authenticate, async (req, res) => {
     const user = await User.findByIdAndUpdate(req.user._id, update, { new: true }).select("-password");
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
   }
 });
 
@@ -112,7 +117,8 @@ router.patch("/me/avatar", authenticate, upload.single("avatar"), async (req, re
 
     res.json(user);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
   }
 });
 
