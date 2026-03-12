@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/mongoose.js";
+import "./config/cloudinary.js";
 import imageRoutes from "./routers/imageRoutes.js";
 import folderRoutes from "./routers/folderRoute.js";
 import syncRoutes from "./routers/sync.js";
