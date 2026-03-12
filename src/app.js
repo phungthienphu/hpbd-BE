@@ -10,6 +10,7 @@ import folderRoutes from "./routers/folderRoute.js";
 import syncRoutes from "./routers/sync.js";
 import userRoutes from "./routers/userRoutes.js";
 import itemRoutes from "./routers/itemRoutes.js";
+import groupRoutes from "./routers/groupRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -34,6 +35,7 @@ app.use("/images", imageRoutes);
 app.use("/sync", syncRoutes);
 app.use("/users", userRoutes);
 app.use("/items", itemRoutes);
+app.use("/groups", groupRoutes);
 
 // Global error handler
 app.use((err, req, res, _next) => {

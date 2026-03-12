@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import multer from "multer";
 import cloudinary from "../config/cloudinary.js";
 import User from "../models/User.js";
-import { authenticate } from "../middlewares/auth.js";
+import { authenticate, requireAdmin } from "../middlewares/auth.js";
 import { friendlyError } from "../utils/errorHandler.js";
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -53,6 +53,37 @@ router.post("/login", async (req, res) => {
     );
 
     res.json({ token, user: { _id: user._id, username: user.username, role: user.role } });
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
+// GET /users — chỉ admin, trả danh sách user
+router.get("/", authenticate, requireAdmin, async (_req, res) => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    res.json(users);
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
+// GET /users/search?q=... — tất cả role, tìm theo username hoặc name
+router.get("/search", authenticate, async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.status(400).json({ message: "Thiếu từ khóa tìm kiếm" });
+
+    const users = await User.find({
+      $or: [
+        { username: { $regex: q, $options: "i" } },
+        { name: { $regex: q, $options: "i" } },
+      ],
+    }).select("-password").limit(20);
+
+    res.json(users);
   } catch (err) {
     const { status, message } = friendlyError(err);
     res.status(status).json({ message });

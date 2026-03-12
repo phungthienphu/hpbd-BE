@@ -11,11 +11,8 @@ const ItemSchema = new mongoose.Schema(
     link: { type: String, default: "" },
     note: { type: String, default: "" },
     status: { type: String, enum: STATUS, default: "todo" },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    group: { type: mongoose.Schema.Types.ObjectId, ref: "Group", default: null },
   },
   { timestamps: true }
 );
