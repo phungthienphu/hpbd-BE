@@ -22,9 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Kiểm tra kết nối DB trước khi xử lý request
 app.use((_req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
+//   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({ message: "Máy chủ chưa sẵn sàng, vui lòng thử lại sau" });
-  }
+//   }
   next();
 });
 
