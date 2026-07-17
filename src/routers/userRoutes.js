@@ -119,6 +119,122 @@ router.patch("/me", authenticate, async (req, res) => {
   }
 });
 
+// GET /users/face/status — kiểm tra user hiện tại đã đăng ký khuôn mặt chưa
+router.get("/face/status", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("faceDescriptor");
+    res.json({ hasFace: user.faceDescriptor.length === 128 });
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
+// POST /users/face/register — lưu face descriptor cho user đang đăng nhập
+router.post("/face/register", authenticate, async (req, res) => {
+  try {
+    const { faceDescriptor } = req.body;
+    if (!Array.isArray(faceDescriptor) || faceDescriptor.length !== 128) {
+      return res.status(400).json({ message: "faceDescriptor phải là mảng 128 số" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { faceDescriptor },
+      { new: true }
+    ).select("-password");
+
+    res.json({ message: "Đã lưu khuôn mặt thành công", user });
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
+// PUT /users/face/register — cập nhật face descriptor (ghi đè)
+router.put("/face/register", authenticate, async (req, res) => {
+  try {
+    const { faceDescriptor } = req.body;
+    if (!Array.isArray(faceDescriptor) || faceDescriptor.length !== 128) {
+      return res.status(400).json({ message: "faceDescriptor phải là mảng 128 số" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { faceDescriptor },
+      { new: true }
+    ).select("-password -faceDescriptor");
+
+    res.json({ message: "Đã cập nhật khuôn mặt thành công", user });
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
+// DELETE /users/face — xóa face descriptor của user hiện tại
+router.delete("/face", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("faceDescriptor");
+    if (!user.faceDescriptor.length) {
+      return res.status(404).json({ message: "Chưa đăng ký khuôn mặt" });
+    }
+
+    await User.findByIdAndUpdate(req.user._id, { faceDescriptor: [] });
+    res.json({ message: "Đã xóa khuôn mặt thành công" });
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
+// POST /users/face/login — đăng nhập bằng face descriptor
+router.post("/face/login", async (req, res) => {
+  try {
+    const { faceDescriptor } = req.body;
+    if (!Array.isArray(faceDescriptor) || faceDescriptor.length !== 128) {
+      return res.status(400).json({ message: "faceDescriptor phải là mảng 128 số" });
+    }
+
+    const users = await User.find({ faceDescriptor: { $exists: true, $not: { $size: 0 } } });
+    if (!users.length) {
+      return res.status(401).json({ message: "Chưa có tài khoản nào đăng ký khuôn mặt" });
+    }
+
+    const THRESHOLD = 0.5;
+    let bestMatch = null;
+    let bestDistance = Infinity;
+
+    for (const u of users) {
+      const dist = Math.sqrt(
+        u.faceDescriptor.reduce((sum, val, i) => sum + (val - faceDescriptor[i]) ** 2, 0)
+      );
+      if (dist < bestDistance) {
+        bestDistance = dist;
+        bestMatch = u;
+      }
+    }
+
+    if (!bestMatch || bestDistance >= THRESHOLD) {
+      return res.status(401).json({ message: "Không nhận diện được khuôn mặt" });
+    }
+
+    const token = jwt.sign(
+      { _id: bestMatch._id, username: bestMatch.username, role: bestMatch.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      token,
+      user: { _id: bestMatch._id, username: bestMatch.username, role: bestMatch.role },
+    });
+  } catch (err) {
+    const { status, message } = friendlyError(err);
+    res.status(status).json({ message });
+  }
+});
+
 // PATCH /users/me/avatar — upload ảnh đại diện
 router.patch("/me/avatar", authenticate, upload.single("avatar"), async (req, res) => {
   try {

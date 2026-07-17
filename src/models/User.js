@@ -10,6 +10,7 @@ const UserSchema = new mongoose.Schema(
     birthday: { type: Date, default: null },
     avatarUrl: { type: String, default: "" },
     avatarPublicId: { type: String, default: "" },
+    faceDescriptor: { type: [Number], default: [] },
   },
   { timestamps: true }
 );
