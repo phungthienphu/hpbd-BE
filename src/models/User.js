@@ -11,6 +11,7 @@ const UserSchema = new mongoose.Schema(
     avatarUrl: { type: String, default: "" },
     avatarPublicId: { type: String, default: "" },
     faceDescriptor: { type: [Number], default: [] },
+    faceRegisteredAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

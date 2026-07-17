@@ -122,8 +122,8 @@ router.patch("/me", authenticate, async (req, res) => {
 // GET /users/face/status — kiểm tra user hiện tại đã đăng ký khuôn mặt chưa
 router.get("/face/status", authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select("faceDescriptor");
-    res.json({ hasFace: user.faceDescriptor.length === 128 });
+    const user = await User.findById(req.user._id).select("faceDescriptor faceRegisteredAt");
+    res.json({ hasFace: user.faceDescriptor.length === 128, faceRegisteredAt: user.faceRegisteredAt });
   } catch (err) {
     const { status, message } = friendlyError(err);
     res.status(status).json({ message });
@@ -140,9 +140,9 @@ router.post("/face/register", authenticate, async (req, res) => {
 
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { faceDescriptor },
+      { faceDescriptor, faceRegisteredAt: new Date() },
       { new: true }
-    ).select("-password");
+    ).select("-password -faceDescriptor");
 
     res.json({ message: "Đã lưu khuôn mặt thành công", user });
   } catch (err) {
@@ -161,7 +161,7 @@ router.put("/face/register", authenticate, async (req, res) => {
 
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { faceDescriptor },
+      { faceDescriptor, faceRegisteredAt: new Date() },
       { new: true }
     ).select("-password -faceDescriptor");
 
